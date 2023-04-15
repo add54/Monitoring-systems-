@@ -19,6 +19,11 @@
 
 on: [push, pull_request]
 name: build
+concurrency:
+  # The final segment `${{ github.ref == format(...` adds the commit SHA when on
+  # the master branch such that new builds for master will not cancel old ones.
+  group: ${{ github.ref }}-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && github.sha || '' }}
+  cancel-in-progress: true
 jobs:
   # Linux + macOS + Windows Python 3
   py3:
@@ -39,11 +44,6 @@ jobs:
           archs: "x86"
 
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.9.1
-      with:
-        access_token: ${{ github.token }}
-
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
@@ -84,11 +84,6 @@ jobs:
       CIBW_BUILD: 'cp27-*'
 
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.9.1
-      with:
-        access_token: ${{ github.token }}
-
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
@@ -114,11 +109,6 @@ jobs:
   py3-freebsd:
     runs-on: macos-12
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.9.1
-      with:
-        access_token: ${{ github.token }}
-
     - uses: actions/checkout@v3
 
     - name: Run tests
